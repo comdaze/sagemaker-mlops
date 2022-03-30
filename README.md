@@ -107,3 +107,55 @@ Buildspec中定义的代码即为在构建编译过程中所需要执行的命�
 ![create-codepipeline-step4](/pics/create-codepipeline-step4.png)
 （6）最后创建完成流水线可以看到第一次执行
 ![run-codepipeline](/pics/run-codepipeline.png)
+
+### 展示
+1、打开Notebook远程仓库代码文件夹，打开invoke_sfn.py文件，将your_account_id与your_step_functions_name分别替换为你的账户id与之前执行notebook后生成的Step Functions状态机的名称；
+```
+import json
+import uuid
+import boto3
+
+
+# define input content
+input_content = {
+    "TrainingJobName": "BYOCJob-{}".format(uuid.uuid4().hex),
+    "ModelName": "BYOCModel-{}".format(uuid.uuid4().hex),
+    "EndpointName": "BYOCEndpoint-{}".format(uuid.uuid4().hex)
+}
+
+
+# invoke step function
+sfn_client = boto3.client('stepfunctions')
+response = sfn_client.start_execution(
+    stateMachineArn='arn:aws-cn:states:cn-northwest-1:45637028xxxx:stateMachine:MyBYOC_11a8778a781d40238d1a7156006ddb60',
+    input=str(input_content).replace('\'', '\"')
+)
+print(response)
+print('Done')
+```
+
+2、此时代码已经发生了变更，在Notebook Ternminal中push代码到Codecommit当中，触发整个CI/CD的流程；
+```
+cd ml-ops-codecommit
+git add .
+git commit -m 'edit invoke_sfn'
+git push
+```
+
+3、查看CodeBuild的构建日志，任务正在执行;
+![codebuild-output-logs](/pics/codebuild-output-logs.png)
+
+4、待CodeBuild将docker image上传到ECR；
+![ecr-image](/pics/ecr-image.png)
+
+之后执行buildspec中第二个步骤，触发Step Functions：
+![stepfunction-run-state](/pics/stepfunction-run-state.png)
+
+在SageMaker训练任务的界面，可以看到SageMaker训练过程正在执行；
+![sagemaker-training-job](/pics/sagemaker-training-job.png)
+
+（6）待状态机中部署的过程执行完成，打开SageMaker的终端节点界面，可以看到终端节点正在创建过程当中，待创建完成之后，就可以用于推理。
+之后执行buildspec中第二个步骤，触发Step Functions：
+![stepfunction-final](/pics/stepfunction-final.png)
+### 总结
+本文介绍了如何利用Step Functions定义SageMaker中训练与部署的过程，当模型需要重新训练时，可以直接触发Step Functions中定义好的状态机，从而减少运维人员重复工作；当算法或特征工程代码发生变更时，触发Codepipeline流水线，在编译构建的过程中使用CodeBuild，将任务高峰期扩展资源的任务交给AWS自动完成。本文通过上述两个场景实现机器学习的CI/CD过程，从而进一步提升算法工程师的开发效率，减少运维团队的工作负担。

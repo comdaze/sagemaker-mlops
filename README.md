@@ -84,9 +84,13 @@ push成功之后，回到CodeCommit控制台，打开存储库，发现代码已
 ![codebuild-logs](/pics/codebuild-logs.png)
 
 Buildspec中定义的代码即为在构建编译过程中所需要执行的命令，可以把该过程理解为：
+
 1）下载执行脚本所需的依赖包boto3；
+
 2）执行build_and_push.sh脚本将算法封装成docker image并上传到ECR；
+
 3）执行invoke_sfn.py脚本，触发Step Functions状态机进行模型的训练与部署。在build commands下复制粘贴以下代码：
+
 ```
 - pip install boto3
 - chmod 777 build_and_push.sh

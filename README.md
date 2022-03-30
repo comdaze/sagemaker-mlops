@@ -163,3 +163,6 @@ git push
 ![stepfunction-final](/pics/stepfunction-final.png)
 ### 总结
 本文介绍了如何利用Step Functions定义SageMaker中训练与部署的过程，当模型需要重新训练时，可以直接触发Step Functions中定义好的状态机，从而减少运维人员重复工作；当算法或特征工程代码发生变更时，触发Codepipeline流水线，在编译构建的过程中使用CodeBuild，将任务高峰期扩展资源的任务交给AWS自动完成。本文通过上述两个场景实现机器学习的CI/CD过程，从而进一步提升算法工程师的开发效率，减少运维团队的工作负担。
+
+#### 参考链接：
+原文参考[基于Jenkins，CodeCommit，CodeBuild构建的CICD方案的AWS官方博客文章](https://aws.amazon.com/cn/blogs/china/ci-cd-solution-for-machine-learning-through-sagemaker-and-step-functions/)

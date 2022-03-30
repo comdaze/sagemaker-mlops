@@ -24,11 +24,15 @@
 ### 实现过程
 1、在Step Functions中定义使用SageMaker训练与部署模型的步骤
 （1）在SageMaker中创建一台笔记本实例，输入名称并保持其他默认配置，待创建完成后打开JupterLab，在初始界面下拉找到Terminal，点击进入执行cd SageMaker命令；
+
 ![create-notebook](/pics/create-notebook.jpg)
 
 （2）打开IAM console，找到SageMaker自动创建的新角色，添加AdministratorAccess权限；
+
 （3）在Terminal中执行命令：
+
 ![open-teeminal](/pics/open-teminal.png)
+
 ```
 git clone https://github.com/comdaze/sagemaker-mlops.git
 ```
@@ -43,15 +47,21 @@ git clone https://github.com/comdaze/sagemaker-mlops.git
 
 
 2、创建CodeCommit与CodeBuild
+
 （1）打开CodeCommit控制台，点击创建存储库；
+
 ![create-codecommit-repo](/pics/create-codecommit-repo.png)
  
 （2）输入存储库名称并点击创建；
+
 ![create-codecommit-repo-step1](/pics/create-codecommit-repo-step1.png)
  
-（3）回到CodeCommit控制台，选择第二步中创建好的存储库，克隆HTTPS URL，
+（3）回到CodeCommit控制台，选择第二步中创建好的存储库，克隆HTTPS URL:
+
 ![create-codecommit-repo-step2](/pics/create-codemmit-repo-step2.png)
+
 在Notebook Terminal执行git clone；
+
 ```
 cd /home/ec2-user/Sagemaker
 git clone https://git-codecommit.cn-northwest-1.amazonaws.com.cn/v1/repos/ml-ops-codecommit
@@ -66,21 +76,27 @@ push成功之后，回到CodeCommit控制台，打开存储库，发现代码已
  在cifar10文件夹中包含了使用tensorflow对cifar-10数据集进行训练与创建tersorflow serving的代码，会通过Dockerfile文件与build_and_push.sh打包封装成docker image并上传到ECR当中，上传完成后会执行invoke_sfn.py脚本，运行已经定义好的Step Functions状态机，从而完成SageMaker训练与部署的过程。
 
 （4）打开CodeBuild控制台，按照下述信息创建项目；
+
 ![create-codebuild-step1](/pics/create-codebuild-step1.png)
 
 构建项目名称
+
 ![create-codebuild-step2](/pics/create-codebuild-step2.png)
 
 选择源
+
 ![create-codebuild-step3](/pics/create-codebuild-step3.png)
 
 构建运行环境
+
 ![create-codebuild-step4](/pics/create-codebuild-step4.png)
 
 修改Buildspec文件
+
 ![create-codebuild-step5](/pics/create-codebuild-step5.png)
 
 日志设置
+
 ![codebuild-logs](/pics/codebuild-logs.png)
 
 Buildspec中定义的代码即为在构建编译过程中所需要执行的命令，可以把该过程理解为：
@@ -99,25 +115,35 @@ Buildspec中定义的代码即为在构建编译过程中所需要执行的命�
 ``` 
  
 其他配置保持默认即可，点击创建构建项目。
+
 （5）打开iam role的控制台，赋予codebuild-ml-ops-service-role角色AmazonEC2ContainerRegistryFullAccess与AWSStepFunctionsFullAccess的权限；
 ![add-policy](/pics/add-policy.png)
 
 3、 采用CodePipeline将CodeCommit、CodeBuild集成
+
 （1）创建CodePipeline流水线；
+
 ![create-codepipeline](/pics/create-codepipeline.png)
  (2)流水线设置；
+
 ![create-codepipeline-step1](/pics/create-codepipeline-step1.png)
 （3）添加源阶段
+
 ![create-codepipeline-step2](/pics/create-codepipeline-step2.png)
 （4）添加构建阶段
+
 ![create-codepipeline-step3](/pics/create-codepipeline-step3.png)
 （5）跳过部署阶段
+
 ![create-codepipeline-step4](/pics/create-codepipeline-step4.png)
+
 （6）最后创建完成流水线可以看到第一次执行
+
 ![run-codepipeline](/pics/run-codepipeline.png)
 
 ### 展示
 1、打开Notebook远程仓库代码文件夹，打开invoke_sfn.py文件，将your_account_id与your_step_functions_name分别替换为你的账户id与之前执行notebook后生成的Step Functions状态机的名称；
+
 ```
 import json
 import uuid
@@ -143,6 +169,7 @@ print('Done')
 ```
 
 2、此时代码已经发生了变更，在Notebook Ternminal中push代码到Codecommit当中，触发整个CI/CD的流程；
+
 ```
 cd ml-ops-codecommit
 git add .
@@ -151,20 +178,25 @@ git push
 ```
 
 3、查看CodeBuild的构建日志，任务正在执行;
+
 ![codebuild-output-logs](/pics/codebuild-output-logs.png)
 
 4、待CodeBuild将docker image上传到ECR；
+
 ![ecr-image](/pics/ecr-image.png)
 
 之后执行buildspec中第二个步骤，触发Step Functions：
+
 ![stepfunction-run-state](/pics/stepfunction-run-state.png)
 
 在SageMaker训练任务的界面，可以看到SageMaker训练过程正在执行；
+
 ![sagemaker-training-job](/pics/sagemaker-training-job.png)
 
-（6）待状态机中部署的过程执行完成，打开SageMaker的终端节点界面，可以看到终端节点正在创建过程当中，待创建完成之后，就可以用于推理。
-之后执行buildspec中第二个步骤，触发Step Functions：
+（6）待状态机中部署的过程执行完成，打开SageMaker的终端节点界面，可以看到终端节点正在创建过程当中，待创建完成之后，就可以用于推理。之后执行buildspec中第二个步骤，触发Step Functions：
+
 ![stepfunction-final](/pics/stepfunction-final.png)
+
 ### 总结
 本文介绍了如何利用Step Functions定义SageMaker中训练与部署的过程，当模型需要重新训练时，可以直接触发Step Functions中定义好的状态机，从而减少运维人员重复工作；当算法或特征工程代码发生变更时，触发Codepipeline流水线，在编译构建的过程中使用CodeBuild，将任务高峰期扩展资源的任务交给AWS自动完成。本文通过上述两个场景实现机器学习的CI/CD过程，从而进一步提升算法工程师的开发效率，减少运维团队的工作负担。
 

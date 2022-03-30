@@ -1,11 +1,15 @@
 # 通过 SageMaker 与 Step Functions 实现MLOps方案
 在传统的机器学习工作流程当中，经常会面临两个问题：
+
 （1）数据迭代迅速，需要定期对模型进行重新训练，每次训练完成后，都需要重新部署模型，如何实现训练与部署过程的的自动化，从而提升工作效率；
+
 （2）算法团队不断地对算法进行开发与变更，并且需要尝试不同的特征工程，每次变更都需要做单元测试，如何将SageMaker与CI/CD工具整合，在提升开发效率的同时减少运维团队的工作负担。
 
 本文会介绍通过SageMaker与Step Functions进行模型自动训练与部署的方法，并会与CodeCommit、CodeBuild、CodePipeline集成，实现机器学习MLOps方案。
 
 ### 流程架构图与过程简介
+
+![arch](/pics/arch-mlops.png)
 
 （1）配置CodePipeline来集成CodeCommit、CodeBuild；
 
